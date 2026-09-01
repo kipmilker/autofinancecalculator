@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex — Monthly Payment Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#14171a;
+    --panel:#1b2027;
+    --panel-2:#20262e;
+    --line:#2d343d;
+    --line-soft:#252b33;
+    --text-hi:#eae7df;
+    --text-mid:#9aa1a9;
+    --text-dim:#5f6670;
+    --amber:#ff8a3d;
+    --amber-dim:#7a4322;
+    --green:#5fd68a;
+    --red:#ff6b6b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg-deep);
+    color:var(--text-hi);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:32px 16px 64px;
+    display:flex;
+    justify-content:center;
+  }
+  .app{
+    width:100%;
+    max-width:920px;
+  }
+  .header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;
+    margin-bottom:28px;
+  }
+  .header .mark{
+    font-family:'Big Shoulders Display',sans-serif;
+    font-weight:700;
+    font-size:30px;
+    letter-spacing:0.5px;
+    color:var(--text-hi);
+    text-transform:uppercase;
+  }
+  .header .mark span{color:var(--amber);}
+  .header .sub{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+  }
+
+  .cluster{
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:20px;
+    margin-bottom:20px;
+  }
+  @media (max-width:720px){
+    .cluster{grid-template-columns:1fr;}
+  }
+
+  .gauge-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:24px 20px 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .gauge-label{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-bottom:8px;
+  }
+  .gauge-readout{
+    font-family:'Space Mono',monospace;
+    font-weight:700;
+    font-size:44px;
+    color:var(--amber);
+    margin-top:6px;
+    letter-spacing:-1px;
+    line-height:1;
+  }
+  .gauge-readout .per{
+    font-size:14px;
+    color:var(--text-mid);
+    font-weight:400;
+    margin-left:6px;
+  }
+  .gauge-svg{width:100%;max-width:280px;}
+  .needle{
+    transform-origin:140px 150px;
+    transition:transform 0.6s cubic-bezier(.2,.8,.2,1);
+  }
+
+  .panel-title{
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin:0 0 20px;
+  }
+
+  .input-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px 24px 14px;
+  }
+  .field{
+    margin-bottom:24px;
+  }
+  .field-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:6px;
+  }
+  .field-label{
+    font-size:16px;
+    color:var(--text-mid);
+    font-weight:500;
+  }
+  .field-value{
+    font-family:'Space Mono',monospace;
+    font-size:18px;
+    color:var(--text-hi);
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:6px 10px;
+    width:100px;
+    text-align:right;
+  }
+  .field-value:focus{
+    outline:none;
+    border-color:var(--amber);
+  }
+  .field-value::-webkit-outer-spin-button,
+  .field-value::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .field-value[type="number"]{
+    -moz-appearance:textfield;
+  }
+  .value-wrap{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:0 10px;
+  }
+  .value-wrap:focus-within{
+    border-color:var(--amber);
+  }
+  .value-wrap .affix{
+    font-family:'Space Mono',monospace;
+    font-size:18px;
+    color:var(--text-dim);
+  }
+  .value-wrap .field-value{
+    border:none;
+    background:transparent;
+    padding:6px 0;
+    width:88px;
+  }
+  .value-wrap .field-value:focus{
+    border:none;
+  }
+
+  .readonly-wrap{
+    border-color:var(--amber-dim);
+    background:rgba(255,138,61,0.06);
+  }
+  .readonly-wrap .field-value{
+    color:var(--amber);
+    cursor:default;
+  }
+  .readonly-wrap .affix{
+    color:var(--amber);
+    opacity:0.7;
+  }
+  .term-buttons{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:6px;
+    margin-top:2px;
+  }
+  .term-btn{
+    font-family:'Space Mono',monospace;
+    font-size:14px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text-mid);
+    border-radius:6px;
+    padding:12px 0;
+    cursor:pointer;
+    transition:all 0.15s ease;
+  }
+  .term-btn:hover{
+    border-color:var(--text-dim);
+    color:var(--text-hi);
+  }
+  .term-btn.active{
+    background:var(--amber-dim);
+    border-color:var(--amber);
+    color:var(--amber);
+  }
+
+  .clear-btn{
+    width:100%;
+    margin-top:14px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-mid);
+    border-radius:6px;
+    padding:10px 0;
+    cursor:pointer;
+    transition:all 0.15s ease;
+  }
+  .clear-btn:hover{
+    border-color:var(--red);
+    color:var(--red);
+  }
+
+  .strip{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .strip-cell{
+    background:var(--panel);
+    padding:18px 20px;
+    text-align:center;
+  }
+  .strip-label{
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-bottom:8px;
+  }
+  .strip-value{
+    font-family:'Space Mono',monospace;
+    font-size:22px;
+    font-weight:700;
+    color:var(--text-hi);
+  }
+  .strip-value.warn{color:var(--red);}
+
+  .footnote{
+    text-align:center;
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:18px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="mark">apex<span>.</span>calc</div>
+    <div class="sub">auto finance readout</div>
+  </div>
+
+  <div class="cluster">
+
+    <div class="gauge-panel">
+      <div class="gauge-label">Monthly payment</div>
+      <svg class="gauge-svg" viewBox="0 0 280 170">
+        <path d="M 20 150 A 120 120 0 0 1 260 150" fill="none" stroke="#2d343d" stroke-width="14" stroke-linecap="round"/>
+        <path id="gaugeFill" d="M 20 150 A 120 120 0 0 1 260 150" fill="none" stroke="#ff8a3d" stroke-width="14" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377"/>
+        <g stroke="#5f6670" stroke-width="2">
+          <line x1="20" y1="150" x2="30" y2="150"/>
+          <line x1="140" y1="30" x2="140" y2="40"/>
+          <line x1="260" y1="150" x2="250" y2="150"/>
+        </g>
+        <g id="needle" class="needle">
+          <line x1="140" y1="150" x2="140" y2="48" stroke="#eae7df" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="140" cy="150" r="8" fill="#eae7df"/>
+        </g>
+        <text x="20" y="168" font-family="Space Mono" font-size="10" fill="#5f6670">$0</text>
+        <text x="215" y="168" font-family="Space Mono" font-size="10" fill="#5f6670" text-anchor="end">$2,000+</text>
+      </svg>
+      <div class="gauge-readout" id="paymentReadout">$0<span class="per">/mo</span></div>
+    </div>
+
+    <div class="input-panel">
+      <div class="panel-title">Deal terms</div>
+
+      <div class="field">
+        <div class="field-row">
+          <span class="field-label">Vehicle price</span>
+          <div class="value-wrap">
+            <span class="affix">$</span>
+            <input type="text" class="field-value" id="costValue" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <span class="field-label">Sales tax</span>
+          <div class="value-wrap">
+            <input type="text" class="field-value" id="taxValue" value="8" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false">
+            <span class="affix">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <span class="field-label">Total vehicle cost</span>
+          <div class="value-wrap readonly-wrap">
+            <span class="affix">$</span>
+            <input type="text" class="field-value" id="totalCostValue" value="0" readonly tabindex="-1">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <span class="field-label">Trade-in value</span>
+          <div class="value-wrap">
+            <span class="affix">$</span>
+            <input type="text" class="field-value" id="tradeValue" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <span class="field-label">Down payment</span>
+          <div class="value-wrap">
+            <span class="affix">$</span>
+            <input type="text" class="field-value" id="downValue" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <span class="field-label">APR</span>
+          <div class="value-wrap">
+            <input type="text" class="field-value" id="aprValue" inputmode="decimal" autocomplete="off" autocorrect="off" spellcheck="false">
+            <span class="affix">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <span class="field-label">Loan term</span>
+        </div>
+        <div class="term-buttons" id="termButtons">
+          <div class="term-btn active" data-term="60">60 mo</div>
+          <div class="term-btn" data-term="72">72 mo</div>
+        </div>
+        <button type="button" class="clear-btn" id="clearBtn">Clear all fields</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="strip">
+    <div class="strip-cell">
+      <div class="strip-label">Amount financed</div>
+      <div class="strip-value" id="loanAmount">$0</div>
+    </div>
+    <div class="strip-cell">
+      <div class="strip-label">Total interest</div>
+      <div class="strip-value" id="totalInterest">$0</div>
+    </div>
+    <div class="strip-cell">
+      <div class="strip-label">Total of payments</div>
+      <div class="strip-value" id="totalPaid">$0</div>
+    </div>
+  </div>
+
+  <div class="footnote">Estimate only. Excludes title, registration, and dealer fees.</div>
+
+</div>
+
+<script>
+  const costValue = document.getElementById('costValue');
+  const taxValue = document.getElementById('taxValue');
+  const totalCostValue = document.getElementById('totalCostValue');
+  const tradeValue = document.getElementById('tradeValue');
+  const downValue = document.getElementById('downValue');
+  const aprValue = document.getElementById('aprValue');
+
+  const termButtons = document.querySelectorAll('.term-btn');
+  let currentTerm = 60;
+
+  const paymentReadout = document.getElementById('paymentReadout');
+  const loanAmountEl = document.getElementById('loanAmount');
+  const totalInterestEl = document.getElementById('totalInterest');
+  const totalPaidEl = document.getElementById('totalPaid');
+  const needle = document.getElementById('needle');
+  const gaugeFill = document.getElementById('gaugeFill');
+
+  const GAUGE_MAX = 2000;
+  const ARC_LENGTH = 377;
+
+  function fmtMoney(n){
+    return '$' + Math.round(n).toLocaleString('en-US');
+  }
+  function parseMoney(str){
+    const n = parseFloat(str);
+    return isNaN(n) ? 0 : n;
+  }
+  function parsePercent(str){
+    const n = parseFloat(str);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function calculate(){
+    const cost = parseMoney(costValue.value);
+    const taxRate = parsePercent(taxValue.value);
+    const trade = parseMoney(tradeValue.value);
+    const down = parseMoney(downValue.value);
+    const apr = parsePercent(aprValue.value);
+    const term = currentTerm;
+
+    const totalVehicleCost = cost * (1 + taxRate / 100);
+    totalCostValue.value = Math.round(totalVehicleCost).toLocaleString('en-US');
+
+    const principal = Math.max(totalVehicleCost - trade - down, 0);
+    const monthlyRate = apr / 100 / 12;
+
+    let payment;
+    if (monthlyRate === 0){
+      payment = term > 0 ? principal / term : 0;
+    } else {
+      payment = principal * monthlyRate / (1 - Math.pow(1 + monthlyRate, -term));
+    }
+    if (!isFinite(payment)) payment = 0;
+
+    const totalPaid = payment * term;
+    const totalInterest = totalPaid - principal;
+
+    paymentReadout.innerHTML = fmtMoney(payment) + '<span class="per">/mo</span>';
+    loanAmountEl.textContent = fmtMoney(principal);
+    totalInterestEl.textContent = fmtMoney(totalInterest);
+    totalPaidEl.textContent = fmtMoney(totalPaid);
+
+    totalInterestEl.classList.toggle('warn', totalInterest > principal * 0.5);
+
+    const ratio = Math.min(payment / GAUGE_MAX, 1);
+    const angle = ratio * 180 - 90;
+    needle.style.transform = 'rotate(' + angle + 'deg)';
+    gaugeFill.setAttribute('stroke-dashoffset', ARC_LENGTH * (1 - ratio));
+  }
+
+  function sanitizeNumeric(e, allowDecimal){
+    const el = e.target;
+    const selStart = typeof el.selectionStart === 'number' ? el.selectionStart : el.value.length;
+    const cursorFromEnd = el.value.length - selStart;
+    let clean = allowDecimal ? el.value.replace(/[^0-9.]/g, '') : el.value.replace(/[^0-9]/g, '');
+    if (allowDecimal){
+      const firstDot = clean.indexOf('.');
+      if (firstDot !== -1){
+        clean = clean.slice(0, firstDot + 1) + clean.slice(firstDot + 1).replace(/\./g, '');
+      }
+    }
+    if (clean !== el.value){
+      el.value = clean;
+      try {
+        const pos = Math.max(clean.length - cursorFromEnd, 0);
+        if (el.setSelectionRange) el.setSelectionRange(pos, pos);
+      } catch (err) {}
+    }
+  }
+
+  [costValue, tradeValue, downValue].forEach(el => {
+    el.addEventListener('input', (e) => sanitizeNumeric(e, false));
+    el.addEventListener('paste', (e) => setTimeout(() => sanitizeNumeric(e, false), 0));
+  });
+
+  [aprValue, taxValue].forEach(el => {
+    el.addEventListener('input', (e) => sanitizeNumeric(e, true));
+    el.addEventListener('paste', (e) => setTimeout(() => sanitizeNumeric(e, true), 0));
+  });
+
+  costValue.addEventListener('input', calculate);
+  taxValue.addEventListener('input', calculate);
+  tradeValue.addEventListener('input', calculate);
+  downValue.addEventListener('input', calculate);
+  aprValue.addEventListener('input', calculate);
+
+  costValue.addEventListener('change', calculate);
+  taxValue.addEventListener('change', () => { if (parseFloat(taxValue.value) > 20) taxValue.value = '20'; calculate(); });
+  tradeValue.addEventListener('change', calculate);
+  downValue.addEventListener('change', calculate);
+  aprValue.addEventListener('change', () => { if (parseFloat(aprValue.value) > 25) aprValue.value = '25'; calculate(); });
+
+  termButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      termButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTerm = parseInt(btn.dataset.term);
+      calculate();
+    });
+  });
+
+  const clearBtn = document.getElementById('clearBtn');
+  clearBtn.addEventListener('click', () => {
+    [costValue, tradeValue, downValue, aprValue].forEach(el => { el.value = ''; });
+    taxValue.value = '8';
+    termButtons.forEach(b => b.classList.remove('active'));
+    document.querySelector('.term-btn[data-term="60"]').classList.add('active');
+    currentTerm = 60;
+    calculate();
+    costValue.focus();
+  });
+
+  calculate();
+</script>
+
+</body>
+</html>
